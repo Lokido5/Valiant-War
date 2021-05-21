@@ -1,0 +1,203 @@
+import pygame
+import random
+
+pygame.init()
+pygame.font.init()
+screen = pygame.display.set_mode((1500, 700))
+pygame.display.set_caption("Valiant War")
+background = pygame.image.load('Level_1.png')
+Clock = pygame.time.Clock()
+EndGame = False
+isOnGround = False
+
+Pxpos = 100
+Pypos = 680
+XVelocity = 0
+YVelocity = 0
+offset = 0
+offsetVel = 0
+armysize = 15
+badarmysize = 15
+
+class PlayerBase:
+    def __init__(self):
+        self.destroyed = False
+        #self.bxpos = 
+        #self.bypos =
+
+class minion:
+    def __init__(self):
+        self.health = 100
+        self.xpos = random.randint(-9000, -100)
+        #self.xpos = -100
+        self.ypos = 600
+        self.color = (255, 255, 50)
+        self.isAttacking = False
+    def draw(self):
+        pygame.draw.rect(screen, (self.color), (self.xpos, self.ypos, 100, 100))
+    def move(self):
+        if self.isAttacking == False:
+            #print("Bob not attacking")
+            #set color back to normal
+            if self.xpos< 5000:
+                self.xpos+=5
+            elif self.xpos >= 5000:
+                self.xpos = random.randint(-9000, -100)
+                self.health = 100
+                self.color = (155, 55, 50)
+    def attack(self, x):
+        if self.xpos+100 > x:
+            self.isAttacking = True
+            #print("good minion attacks!")
+            self.color = (255, 0, 255)
+            self.health-= random.randint(1, 5) #adjust this so it fits your game design
+        else:
+            self.isAttacking = False
+            self.color = (155, 55, 50)
+        if self.health <0:
+            #print("Bob died!")
+            self.xpos = random.randint(-9000, -100)
+            self.isAttacking = False
+
+class badminion:
+    def __init__(self):
+        self.health = 100
+        self.xpos = random.randint(1800, 9000)
+        #self.xpos = 1500
+        self.ypos = 600
+        self.color = (0, 55, 150)
+        self.isAttacking = False
+    def draw(self):
+        pygame.draw.rect(screen, (self.color), (self.xpos, self.ypos, 100, 100))
+    def move(self):
+        if self.isAttacking == False:
+            #print("bobby not attacking.")
+            #set color back to normal
+            if self.xpos>= 0:
+                self.xpos-=5
+            elif self.xpos <0:
+                self.xpos = random.randint(1800, 9000)
+                self.health = 100
+                self.color = (155, 155, 150)
+    def attack(self, x):
+        if self.xpos < x+100:
+            self.isAttacking = True
+            #print("bad minion attacks!")
+            self.color = (255, 0, 255)
+            self.health-= random.randint(1, 5) #adjust this so it fits your game design
+        else:
+            self.isAttacking = False
+            self.color = (155, 155, 150)
+        if self.health <0:
+            #print("Bobby died!")
+            self.xpos = random.randint(1800, 9000)
+            self.isAttacking = False
+        
+#Bob = minion()
+Bob = list()
+for i in range (armysize): 
+    Bob.append(minion())
+    
+Bobby = list()
+for i in range (badarmysize): 
+    Bobby.append(badminion())
+#create 15 badguys
+
+#Game Loop-----------------------------
+while not EndGame:
+    
+    Clock.tick(60)
+    
+    events = pygame.event.get()
+
+    for event in events:
+        if event.type == pygame.QUIT:
+            EndGame = True
+            
+    keys = pygame.key.get_pressed()
+    #if keys[pygame.K_a]:
+        #XVelocity = -7
+    if keys[pygame.K_a]:#left
+        if isOnGround == True:
+            if Pxpos > 200: 
+                XVelocity = 0 
+                offsetVel = -5
+            else:
+                XVelocity = -5
+                offsetVel = 0
+        elif isOnGround == False: 
+            if Pxpos > 200: 
+                offsetVel = -3
+            else:
+                XVelocity = -7
+    #if keys[pygame.K_d]:
+        #XVelocity = 7
+    elif keys[pygame.K_d]:#right
+        if isOnGround == True:
+            if Pxpos > 200: 
+                XVelocity = 0 
+                offsetVel = 5
+            else:
+                XVelocity = 5
+                offsetVel = 0
+        elif isOnGround == False: 
+            if Pxpos > 200: 
+                offsetVel = 3
+            else:
+                XVelocity = 7
+    else:
+        Xvelocity = 0
+        offsetVel=0
+                
+    if Pxpos > 200:
+        XVelocity = 0
+        
+    if keys[pygame.K_SPACE]: #jump
+        if isOnGround == True:
+            YVelocity = -7
+            
+    #Gravity-----------------------------------------------------------------------
+    if Pypos > 680 - 100: #check if your feet are on the ground
+        isOnGround = True
+        Pypos = 680 - 100 #stops you from going below ground
+        YVelocity = 0 #stop falling if on ground
+    else:
+        isOnGround = False
+        
+    if isOnGround == False:
+        YVelocity+=.2 #if not on ground, fall downwards
+        
+    #physics Section---------------------------------------------------------------
+    if isOnGround == True:
+        XVelocity *=.5
+    Pxpos += XVelocity
+    Pypos += YVelocity
+    offset += offsetVel
+    
+    for i in range (armysize): 
+      Bob[i].move()
+    
+    for i in range (armysize): 
+      Bobby[i].move()
+      
+    for i in range (armysize):
+      for j in range (armysize):  
+          Bob[i].attack(Bobby[j].xpos)
+          Bobby[i].attack(Bob[i].xpos)
+    
+            
+    #render section----------------------------------------------------------------
+    screen.blit(background, (0-offset,0))
+    
+    pygame.draw.rect(screen, (255, 50, 50), (Pxpos, Pypos, 100, 100))
+    
+    for i in range (armysize): 
+      Bob[i].draw()
+      
+    for i in range (armysize): 
+      Bobby[i].draw()
+    
+    pygame.display.flip()
+    
+          
+pygame.quit()
